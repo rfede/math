@@ -29,6 +29,20 @@
         
     }
 
+    Node.prototype.displayNums = function(){
+        if (this.childrens.length == 0) {return '0';}
+        str = '';
+        for (const node in this.childrens){
+            str += ' '+this.childrens[node].displayNums();
+        }
+        if (str.match(/^(\s0)+$/) != null) {
+            str = ' '+str.match(/0/g).length;
+            return str.substring(1);
+        }
+        return '['+str.substring(1)+']';
+    }
+
+
     function addNodes(A, B){
         var newnode = new Node();
         newnode.childrens = A.childrens.concat(B.childrens);
@@ -155,8 +169,14 @@
         trees[3] = new Tree(multiplyNodes(A, B)); // multiplication
         trees[4] = new Tree(caretNodes(A, B)); // caret
         displaySol(trees[2], 'addition');
+        document.getElementById('bracketAddRep').innerHTML = trees[2].root.display();
+        document.getElementById('numAddRep').innerHTML = trees[2].root.displayNums();
         displaySol(trees[3], 'multiplication');
+        document.getElementById('bracketMulRep').innerHTML = trees[3].root.display();
+        document.getElementById('numMulRep').innerHTML = trees[3].root.displayNums();
         displaySol(trees[4], 'caret');
+        document.getElementById('bracketCaretRep').innerHTML = trees[4].root.display();
+        document.getElementById('numCaretRep').innerHTML = trees[4].root.displayNums();
     }
 
     function solutions(){
@@ -188,11 +208,17 @@
         Show Solutions
     </button>
    <div id="solutions" style="display: none">
-    <h1>A + B</h1> 
+    <h1>A + B</h1>
+    <h3 id="bracketAddRep"></h3> 
+    <h3 id="numAddRep"></h3>
     <canvas id="addition" height="250"></canvas>
     <h1>A x B</h1> 
+    <h3 id="bracketMulRep"></h3> 
+    <h3 id="numMulRep"></h3>
     <canvas id="multiplication" height="250"></canvas>
-    <h1>A ^ B</h1> 
+    <h1>A ^ B</h1>
+    <h3 id="bracketCaretRep"></h3> 
+    <h3 id="numCaretRep"></h3> 
     <canvas id="caret" height="250"></canvas>
    </div>
  </body>
