@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <script type="application/javascript">
+    function Node(parent = []) {
+        this.parent = parent;
+        this.childrens = [];
+    }
+
+    Node.prototype.addNode = function(node){
+        if (this.childrens == []){
+            this.childrens = [node];
+        } else {
+            this.childrens.push(node);
+        }
+    }
+
+    Node.prototype.isRoot = function(){
+        return this.parent == [];
+    }
+
+    Node.prototype.display = function(){
+        if (this.childrens.length == 0) {return '[]';}
+        str = '';
+        for (const node in this.childrens){
+            str += ' '+this.childrens[node].display();
+        }
+        return '['+str.substring(1)+']';
+        
+    }
+
+    function addNodes(A, B){
+        var newnode = new Node();
+        newnode.childrens = A.childrens.concat(B.childrens);
+        return newnode;
+    }
+
+    function multiplyNodes(A, B){
+        var newnode = new Node();
+        for (const node_A in A.childrens) {
+            for (const node_B in B.childrens){
+                newnode.addNode(addNodes(A.childrens[node_A], B.childrens[node_B]));
+            }
+        }
+        return newnode;
+    }
+
+    function caretNodes(A, B){
+        var newnode = new Node();
+        for (const node_A in A.childrens) {
+            for (const node_B in B.childrens){
+                newnode.addNode(multiplyNodes(A.childrens[node_A], B.childrens[node_B]));
+            }
+        }
+        return newnode;
+    }
+
+    function Tree(root){
+        this.root = root;
+    }
+
+    Tree.prototype.display = function(){
+        console.log(this.root.display());
+    }
+
+    function randomTree(){
+        root = new Node();
+        tree = new Tree(root);
+        for (let k = 0, kceil = Math.ceil(Math.random() * 5); k< kceil; k++) {
+            root.addNode(new Node);
+            if (Math.random()<.5) {continue;}
+            for (let j = 0, jceil = Math.ceil(Math.random() * 4); j< jceil; j++) {
+                root.childrens[k].addNode(new Node);
+                if (Math.random()<.5) {continue;}
+                for (let i = 0, iceil = Math.ceil(Math.random() * 3); i< iceil; i++) {
+                    root.childrens[k].childrens[j].addNode(new Node);
+                    if (Math.random()<.5) {continue;}
+                    for (let h = 0, hceil = Math.ceil(Math.random() * 2); h< hceil; h++) {
+                        root.childrens[k].childrens[j].childrens[i].addNode(new Node);
+                    }
+                }
+            }
+        }
+        return tree;
+    }
+    
+    function drawLeaf(context, x, y){
+        const circle = new Path2D();
+        circle.arc(x, y, 5, 0, 2 * Math.PI);
+        context.strokeStyle = "black";
+        context.lineWidth = '10';
+        context.fillStyle = "white";
+        context.stroke(circle);
+        context.fill(circle);
+    }
+    
+    function drawNode(context, x, y){
+        drawLeaf(context, x, y);
+        const circle = new Path2D();
+        circle.arc(x, y, 3, 0, 2 * Math.PI);
+        context.fillStyle = "black";
+        context.fill(circle);
+    }
+    
+    function drawTree(node, context, x, y, width){
+        if (node.childrens.length == 0){
+            drawLeaf(context, x + width/2, y);
+        } else{
+            let newWidth = width / node.childrens.length;
+            for (const nd in node.childrens){
+                context.lineWidth = '1';
+                context.moveTo(x + width/2, y);
+                context.lineTo(x+(parseInt(nd)+1/2)*newWidth, y+50);
+                context.stroke();
+                drawTree(node.childrens[nd], 
+                         context, 
+                         x+parseInt(nd)*newWidth, 
+                         y+50, 
+                         newWidth);
+            }
+            drawNode(context, x + width/2, y);
+
+        }
+    }
+
+    var trees = [null, null, null, null, null];
+    
+    function reset(n){
+        const canvas = document.getElementById('canvas'+n);
+        if (canvas.getContext) {
+            const ctx = canvas.getContext('2d');
+            ctx.canvas.width = (4*window.innerWidth)/5;
+            trees[n] = randomTree();
+            trees[n].display();
+            drawTree(trees[n].root, ctx, 0, 10, ctx.canvas.width);
+        }
+        document.getElementById('solutions').style.display = 'none';
+        document.getElementById('button1').innerHTML = "Show Solutions";
+    }
+
+    function displaySol(tree, sol){
+        const canvas = document.getElementById(sol);
+        if (canvas.getContext) {
+            const ctx = canvas.getContext('2d');
+            ctx.canvas.width = (4*window.innerWidth)/5;
+            tree.display();
+            drawTree(tree.root, ctx, 0, 10, ctx.canvas.width);
+        }
+    }
+
+    function solve(){
+        let A = trees[0].root;
+        let B = trees[1].root;
+        trees[2] = new Tree(addNodes(A, B)); // adition
+        trees[3] = new Tree(multiplyNodes(A, B)); // multiplication
+        trees[4] = new Tree(caretNodes(A, B)); // caret
+        displaySol(trees[2], 'addition');
+        displaySol(trees[3], 'multiplication');
+        displaySol(trees[4], 'caret');
+    }
+
+    function solutions(){
+        const canvas = document.getElementById('solutions');
+        if (canvas.style.display == 'block'){
+            canvas.style.display = 'none';
+            document.getElementById('button1').innerHTML = "Show Solutions";
+        } else{
+            solve();
+            canvas.style.display = 'block';
+            document.getElementById('button1').innerHTML = "Hide Solutions";
+        }
+    }
+
+    function draw() {
+        reset(0);
+        reset(1);
+    }
+  </script>
+ </head>
+ <body onload="draw();">
+    <h1>Graph A</h1> 
+   <canvas id="canvas0" height="250"></canvas>
+   <button onclick="reset(0)">Reset Graph A</button>
+   <h1>Graph B</h1> 
+   <canvas id="canvas1" height="250"></canvas>
+   <button onclick="reset(1)">Reset Graph B</button>
+   <button id="button1" onclick="solutions()">
+        Show Solutions
+    </button>
+   <div id="solutions" style="display: none">
+    <h1>A + B</h1> 
+    <canvas id="addition" height="250"></canvas>
+    <h1>A x B</h1> 
+    <canvas id="multiplication" height="250"></canvas>
+    <h1>A ^ B</h1> 
+    <canvas id="caret" height="250"></canvas>
+   </div>
+ </body>
+</html>
