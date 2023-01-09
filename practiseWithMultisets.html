@@ -123,8 +123,10 @@
             let newWidth = width / node.childrens.length;
             for (const nd in node.childrens){
                 context.lineWidth = '1';
-                context.moveTo(x + width/2, y);
-                context.lineTo(x+(parseInt(nd)+1/2)*newWidth, y+50);
+                const vector = [(parseInt(nd)+1/2)*newWidth - width/2,50];
+                const normal = Math.sqrt(Math.pow(vector[0], 2) + Math.pow(vector[1],2));
+                context.moveTo(x + width/2+(vector[0]/normal)*5, y+(vector[1]/normal)*5);
+                context.lineTo(x+ width/2+vector[0]-(vector[0]/normal)*5, y+vector[1]-(vector[1]/normal)*5);
                 context.stroke();
                 drawTree(node.childrens[nd], 
                          context, 
