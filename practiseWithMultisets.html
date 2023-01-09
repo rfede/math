@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <script type="application/javascript">
+    function Node(parent = []) {
+        this.parent = parent;
+        this.childrens = [];
+    }
+
+    Node.prototype.addNode = function(node){
+        if (this.childrens == []){
+            this.childrens = [node];
+        } else {
+            this.childrens.push(node);
+        }
+    }
+
+    Node.prototype.isRoot = function(){
+        return this.parent == [];
+    }
+
+    Node.prototype.display = function(){
+        if (this.childrens.length == 0) {return '[]';}
+        str = '';
+        for (const node in this.childrens){
+            str += ' '+this.childrens[node].display();
+        }
+        return '['+str.substring(1)+']';
+        
+    }
+
+    Node.prototype.displayNums = function(){
+        if (this.childrens.length == 0) {return '0';}
+        str = '';
+        for (const node in this.childrens){
+            str += ' '+this.childrens[node].displayNums();
+        }
+        if (str.match(/^(\s0)+$/) != null) {
+            str = ' '+str.match(/0/g).length;
+            return str.substring(1);
+        }
+        return '['+str.substring(1)+']';
+    }
+
+
+    function addNodes(A, B){
+        var newnode = new Node();
+        newnode.childrens = A.childrens.concat(B.childrens);
+        return newnode;
+    }
+
+    function multiplyNodes(A, B){
+        var newnode = new Node();
+        for (const node_A in A.childrens) {
+            for (const node_B in B.childrens){
+                newnode.addNode(addNodes(A.childrens[node_A], B.childrens[node_B]));
+            }
+        }
+        return newnode;
+    }
+
+    function caretNodes(A, B){
+        var newnode = new Node();
+        for (const node_A in A.childrens) {
+            for (const node_B in B.childrens){
+                newnode.addNode(multiplyNodes(A.childrens[node_A], B.childrens[node_B]));
+            }
+        }
+        return newnode;
+    }
+
+    function Tree(root){
+        this.root = root;
+    }
+
+    Tree.prototype.display = function(){
+        console.log(this.root.display());
+    }
+
+    function randomTree(){
+        root = new Node();
+        tree = new Tree(root);
+        for (let k = 0, kceil = Math.ceil(Math.random() * 5); k< kceil; k++) {
+            root.addNode(new Node);
+            if (Math.random()<.5) {continue;}
+            for (let j = 0, jceil = Math.ceil(Math.random() * 4); j< jceil; j++) {
+                root.childrens[k].addNode(new Node);
+                if (Math.random()<.5) {continue;}
+                for (let i = 0, iceil = Math.ceil(Math.random() * 3); i< iceil; i++) {
+                    root.childrens[k].childrens[j].addNode(new Node);
+                    if (Math.random()<.5) {continue;}
+                    for (let h = 0, hceil = Math.ceil(Math.random() * 2); h< hceil; h++) {
+                        root.childrens[k].childrens[j].childrens[i].addNode(new Node);
+                    }
+                }
+            }
+        }
+        return tree;
+    }
+    
+    function drawLeaf(context, x, y){
+        const circle = new Path2D();
+        circle.arc(x, y, 5, 0, 2 * Math.PI);
+        context.strokeStyle = "black";
+        context.lineWidth = '10';
+        context.fillStyle = "white";
+        context.stroke(circle);
+        context.fill(circle);
+    }
+    
+    function drawNode(context, x, y){
+        drawLeaf(context, x, y);
+        const circle = new Path2D();
+        circle.arc(x, y, 3, 0, 2 * Math.PI);
+        context.fillStyle = "black";
+        context.fill(circle);
+    }
+    
+    function drawTree(node, context, x, y, width){
+        if (node.childrens.length == 0){
+            drawLeaf(context, x + width/2, y);
+        } else{
+            let newWidth = width / node.childrens.length;
+            for (const nd in node.childrens){
+                context.lineWidth = '1';
+                context.moveTo(x + width/2, y);
+                context.lineTo(x+(parseInt(nd)+1/2)*newWidth, y+50);
+                context.stroke();
+                drawTree(node.childrens[nd], 
+                         context, 
+                         x+parseInt(nd)*newWidth, 
+                         y+50, 
+                         newWidth);
+            }
+            drawNode(context, x + width/2, y);
+
+        }
+    }
+
+    var trees = [null, null, null, null, null];
+    
+    function reset(n){
+        const canvas = document.getElementById('canvas'+n);
+        if (canvas.getContext) {
+            const ctx = canvas.getContext('2d');
+            ctx.canvas.width = (4*window.innerWidth)/5;
+            trees[n] = randomTree();
+            trees[n].display();
+            drawTree(trees[n].root, ctx, 0, 10, ctx.canvas.width);
+        }
+        document.getElementById('solutions').style.display = 'none';
+        document.getElementById('button1').innerHTML = "Show Solutions";
+    }
+
+    function displaySol(tree, sol){
+        const canvas = document.getElementById(sol);
+        if (canvas.getContext) {
+            const ctx = canvas.getContext('2d');
+            ctx.canvas.width = (4*window.innerWidth)/5;
+            tree.display();
+            drawTree(tree.root, ctx, 0, 10, ctx.canvas.width);
+        }
+    }
+
+    function solve(){
+        let A = trees[0].root;
+        let B = trees[1].root;
+        trees[2] = new Tree(addNodes(A, B)); // adition
+        trees[3] = new Tree(multiplyNodes(A, B)); // multiplication
+        trees[4] = new Tree(caretNodes(A, B)); // caret
+        displaySol(trees[2], 'addition');
+        document.getElementById('bracketAddRep').innerHTML = trees[2].root.display();
+        document.getElementById('numAddRep').innerHTML = trees[2].root.displayNums();
+        displaySol(trees[3], 'multiplication');
+        document.getElementById('bracketMulRep').innerHTML = trees[3].root.display();
+        document.getElementById('numMulRep').innerHTML = trees[3].root.displayNums();
+        displaySol(trees[4], 'caret');
+        document.getElementById('bracketCaretRep').innerHTML = trees[4].root.display();
+        document.getElementById('numCaretRep').innerHTML = trees[4].root.displayNums();
+    }
+
+    function solutions(){
+        const canvas = document.getElementById('solutions');
+        if (canvas.style.display == 'block'){
+            canvas.style.display = 'none';
+            document.getElementById('button1').innerHTML = "Show Solutions";
+        } else{
+            solve();
+            canvas.style.display = 'block';
+            document.getElementById('button1').innerHTML = "Hide Solutions";
+        }
+    }
+
+    function draw() {
+        reset(0);
+        reset(1);
+    }
+
+    function invalidInput(canvas){
+        const context = canvas.getContext("2d");
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = "black";
+        context.font = "bold 48px Arial";
+        context.fillText("INVALID INPUT", (100), (canvas.height / 2));
+
+    }
+
+    function drawUsersTree(tree){
+        const str = document.getElementById('userTree'+tree).value;
+        const canvas = document.getElementById('canvas'+tree);
+        document.getElementById('solutions').style.display = 'none';
+        document.getElementById('button1').innerHTML = "Show Solutions";
+        trees[tree] = userTree(str);
+        if (trees[tree].root == null) {
+            invalidInput(canvas);
+        }else{
+            if (canvas.getContext) {
+                const ctx = canvas.getContext('2d');
+                ctx.canvas.width = (4*window.innerWidth)/5;
+                trees[tree].display();
+                drawTree(trees[tree].root, ctx, 0, 10, ctx.canvas.width);
+            }
+        }
+    }
+
+    function userTree(str)
+    {
+        if (str.match(/^[\s\[\]]*$/) == null) {return new Tree(null)}
+        let stack = [];
+        let root = null;
+        for(let k = 0; k < str.length; k++)
+        {
+            if (str[k] == '[')
+            {
+                const node = new Node()
+                if (stack.length != 0){ // not the root node
+                    stack[stack.length - 1].addNode(node);
+                }else { // the root node
+                    if (root != null){ return new Tree(null)}
+                    root = node;
+                }
+                stack.push(node);
+            } else if (str[k] == ']') {
+                if (stack.length == 0){
+                    return new Tree(null);
+                }
+                stack.pop();
+            }
+        }
+        if (stack.length != 0) return new Tree(null);
+        return new Tree(root);
+    }
+  </script>
+ </head>
+ <body onload="draw();">
+    <h1>
+        Graph A 
+        <input type="text" id="userTree0" placeholder="Only brackets" onkeyup="if (event.keyCode === 13){drawUsersTree('0');}">
+        <input type="button" value="Draw user's Tree A" onclick="drawUsersTree('0')">
+        <button onclick="reset(0)">Random Tree A</button>
+    </h1> 
+   <canvas id="canvas0" height="250"></canvas>
+   
+   <h1>
+        Graph B 
+        <input type="text" id="userTree1" placeholder="Only brackets" onkeyup="if (event.keyCode === 13){drawUsersTree('1');}">
+        <input type="button" value="Draw user's Tree B" onclick="drawUsersTree('1')">
+        <button onclick="reset(1)">Random Tree B</button>
+   
+    </h1>
+   <canvas id="canvas1" height="250"></canvas>
+   <button id="button1" onclick="solutions()">
+        Show Solutions
+    </button>
+   <div id="solutions" style="display: none">
+    <h1>A + B</h1>
+    <h3 id="bracketAddRep"></h3> 
+    <h3 id="numAddRep"></h3>
+    <canvas id="addition" height="250"></canvas>
+    <h1>A x B</h1> 
+    <h3 id="bracketMulRep"></h3> 
+    <h3 id="numMulRep"></h3>
+    <canvas id="multiplication" height="250"></canvas>
+    <h1>A ^ B</h1>
+    <h3 id="bracketCaretRep"></h3> 
+    <h3 id="numCaretRep"></h3> 
+    <canvas id="caret" height="250"></canvas>
+   </div>
+ </body>
+</html>
