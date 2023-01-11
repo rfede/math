@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <script type="application/javascript">
+    function Node(parent = [], layer = 0) {
+    this.parent = parent;
+    this.childrens = [];
+    this.layer = layer;
+    this.x = -1;
+}
+
+Node.prototype.addNode = function(node){
+    if (this.childrens == []){
+        this.childrens = [node];
+    } else {
+        this.childrens.push(node);
+    }
+}
+
+Node.prototype.isRoot = function(){
+    return this.parent == [];
+}
+
+
+
+Node.prototype.display = function(){
+    if (this.childrens.length == 0) {return '[]';}
+    str = '';
+    for (const node in this.childrens){
+        str += ' '+this.childrens[node].display();
+    }
+    return '['+str.substring(1)+']';
+    
+}
+
+Node.prototype.displayNums = function(){
+    if (this.childrens.length == 0) {return '0';}
+    str = '';
+    for (const node in this.childrens){
+        str += ' '+this.childrens[node].displayNums();
+    }
+    if (str.match(/^(\s0)+$/) != null) {
+        str = ' '+str.match(/0/g).length;
+        return str.substring(1);
+    }
+    return '['+str.substring(1)+']';
+}
+
+
+function addNodes(A, B){
+    var newnode = new Node();
+    newnode.childrens = A.childrens.concat(B.childrens);
+    return newnode;
+}
+
+function multiplyNodes(A, B){
+    var newnode = new Node();
+    for (const node_A in A.childrens) {
+        for (const node_B in B.childrens){
+            newnode.addNode(addNodes(A.childrens[node_A], B.childrens[node_B]));
+        }
+    }
+    return newnode;
+}
+
+function caretNodes(A, B){
+    var newnode = new Node();
+    for (const node_A in A.childrens) {
+        for (const node_B in B.childrens){
+            newnode.addNode(multiplyNodes(A.childrens[node_A], B.childrens[node_B]));
+        }
+    }
+    return newnode;
+}
+
+function Tree(root){
+    this.root = root;
+}
+
+Tree.prototype.display = function(){
+    console.log(this.root.display());
+}
+
+function randomTree(){
+    root = new Node();
+    tree = new Tree(root);
+    for (let k = 0, kceil = Math.ceil(Math.random() * 5); k< kceil; k++) {
+        root.addNode(new Node(root, 1));
+        if (Math.random()<.5) {continue;}
+        for (let j = 0, jceil = Math.ceil(Math.random() * 4); j< jceil; j++) {
+            root.childrens[k].addNode(new Node(root.childrens[k], 2));
+            if (Math.random()<.5) {continue;}
+            for (let i = 0, iceil = Math.ceil(Math.random() * 3); i< iceil; i++) {
+                root.childrens[k].childrens[j].addNode(new Node(root.childrens[k].childrens[j], 3));
+                if (Math.random()<.5) {continue;}
+                for (let h = 0, hceil = Math.ceil(Math.random() * 2); h< hceil; h++) {
+                    root.childrens[k].childrens[j].childrens[i].addNode(new Node(root.childrens[k].childrens[j].childrens[i], 4));
+                }
+            }
+        }
+    }
+    return tree;
+}
+
+function drawLeaf(context, x, y){
+    const circle = new Path2D();
+    circle.arc(x, y, 5, 0, 2 * Math.PI);
+    context.strokeStyle = "black";
+    context.lineWidth = '10';
+    context.fillStyle = "white";
+    context.stroke(circle);
+    context.fill(circle);
+}
+
+function drawNode(context, x, y){
+    drawLeaf(context, x, y);
+    const circle = new Path2D();
+    circle.arc(x, y, 3, 0, 2 * Math.PI);
+    context.fillStyle = "black";
+    context.fill(circle);
+}
+
+function drawTree(node, context){
+    const distance = 50;
+    console.log(node);
+    if (node.childrens.length == 0){
+        drawLeaf(context, node.x+distance, (node.y+1)*50);
+    } else{
+        for (const nd in node.childrens){
+            context.lineWidth = '1';
+            const vector = [node.childrens[nd].x - node.x,(node.childrens[nd].y+1)*50 - (node.y+1)*50];
+            const normal = Math.sqrt(Math.pow(vector[0], 2) + Math.pow(vector[1],2));
+            context.moveTo(node.x+distance+(vector[0]/normal)*5, (node.y+1)*50+(vector[1]/normal)*5);
+            context.lineTo(node.x+distance+vector[0]-(vector[0]/normal)*5, (node.y+1)*50+vector[1]-(vector[1]/normal)*5);
+            context.stroke();
+            drawTree(node.childrens[nd], 
+                     context);
+        }
+        drawNode(context, node.x + distance, (node.y+1)*50);
+
+    }
+}
+
+var trees = [null, null, null, null, null];
+
+function reset(n){
+    const canvas = document.getElementById('canvas'+n);
+    if (canvas.getContext) {
+        const ctx = canvas.getContext('2d');
+        trees[n] = randomTree();
+        trees[n].display();
+        tree = new DrawTree(trees[n].root);
+        buchheim(tree);
+        ctx.canvas.width = tree.width + 100;
+        ctx.canvas.height = (tree.height+2)*50;
+        drawTree(tree, ctx);
+    }
+    document.getElementById('solutions').style.display = 'none';
+    document.getElementById('button1').innerHTML = "Show Solutions";
+}
+
+function displaySol(tree, sol){
+    tree.display();
+    const canvas = document.getElementById(sol);
+    if (canvas.getContext) {
+        const ctx = canvas.getContext('2d');
+        tree = new DrawTree(tree.root);
+        buchheim(tree);
+        ctx.canvas.width = tree.width + 100;
+        ctx.canvas.height = (tree.height+2)*50;
+        drawTree(tree, ctx);
+    }
+}
+
+function solve(){
+    let A = trees[0].root;
+    let B = trees[1].root;
+    trees[2] = new Tree(addNodes(A, B)); // adition
+    trees[3] = new Tree(multiplyNodes(A, B)); // multiplication
+    trees[4] = new Tree(caretNodes(A, B)); // caret
+    displaySol(trees[2], 'addition');
+    document.getElementById('bracketAddRep').innerHTML = trees[2].root.display();
+    document.getElementById('numAddRep').innerHTML = trees[2].root.displayNums();
+    displaySol(trees[3], 'multiplication');
+    document.getElementById('bracketMulRep').innerHTML = trees[3].root.display();
+    document.getElementById('numMulRep').innerHTML = trees[3].root.displayNums();
+    displaySol(trees[4], 'caret');
+    document.getElementById('bracketCaretRep').innerHTML = trees[4].root.display();
+    document.getElementById('numCaretRep').innerHTML = trees[4].root.displayNums();
+}
+
+function solutions(){
+    const canvas = document.getElementById('solutions');
+    if (canvas.style.display == 'block'){
+        canvas.style.display = 'none';
+        document.getElementById('button1').innerHTML = "Show Solutions";
+    } else{
+        solve();
+        canvas.style.display = 'block';
+        document.getElementById('button1').innerHTML = "Hide Solutions";
+    }
+}
+
+function draw() {
+    reset(0);
+    reset(1);
+}
+
+function invalidInput(canvas){
+    const context = canvas.getContext("2d");
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "black";
+    context.font = "bold 48px Arial";
+    context.fillText("INVALID INPUT", (100), (canvas.height / 2));
+
+}
+
+function drawUsersTree(tree){
+    const str = document.getElementById('userTree'+tree).value;
+    const canvas = document.getElementById('canvas'+tree);
+    document.getElementById('solutions').style.display = 'none';
+    document.getElementById('button1').innerHTML = "Show Solutions";
+    trees[tree] = userTree(str);
+    if (trees[tree].root == null) {
+        invalidInput(canvas);
+    }else{
+        if (canvas.getContext) {
+            const ctx = canvas.getContext('2d');
+            trees[tree].display();
+            newtree = new DrawTree(trees[tree].root);
+            buchheim(newtree);
+            ctx.canvas.width = newtree.width + 100;
+            ctx.canvas.height = (newtree.height+2)*50;
+            drawTree(newtree, ctx);
+        }
+    }
+}
+
+function userTree(str)
+{
+    if (str.match(/^[\s\[\]]*$/) == null) {return new Tree(null)}
+    let stack = [];
+    let root = null;
+    for(let k = 0; k < str.length; k++)
+    {
+        if (str[k] == '[')
+        {
+            const node = new Node();
+            if (stack.length != 0){ // not the root node
+                const parent = stack[stack.length - 1];
+                node.parent = parent;
+                node.layer = parent.layer+1;
+                stack[stack.length - 1].addNode(node);
+            }else { // the root node
+                if (root != null){ return new Tree(null)}
+                root = node;
+            }
+            stack.push(node);
+        } else if (str[k] == ']') {
+            if (stack.length == 0){
+                return new Tree(null);
+            }
+            stack.pop();
+        }
+    }
+    if (stack.length != 0) return new Tree(null);
+    return new Tree(root);
+}
+
+
+
+
+
+
+/* Bill Mill's implementation of walker's algorithm 
+   taken from https://llimllib.github.io/pymag-trees/ */
+
+class DrawTree {
+    constructor(tree, parent = null, depth = 0, number = 1) {
+        if (! parent){
+            this.root = this;
+            this.height = 0;
+            this.width = 0;
+        }else{
+            this.root = parent.root;
+            if ( depth > this.root.height) {
+                this.root.height = depth;
+            }
+        }
+        this.x = -1.0;
+        this.y = depth;
+        this.mod = 0;
+        this.tree = tree;
+        this.childrens = [];
+        for (let i = 0; i < tree.childrens.length; i++) {
+            this.childrens.push(new DrawTree(tree.childrens[i], this, depth+1, i+1));
+        }
+        this.parent = parent;
+        this.thread = null;
+        this.offset = 0;
+        this.ancestor = this;
+        this.change = this.shift = 0;
+        this._lmost_sibling = null;
+        this.number = number;
+    }
+    left_brother() {
+        var n;
+        n = null;
+    
+        if (this.parent) {
+          for (var node, _pj_c = 0, _pj_a = this.parent.childrens, _pj_b = _pj_a.length; _pj_c < _pj_b; _pj_c += 1) {
+            node = _pj_a[_pj_c];
+    
+            if (node === this) {
+              return n;
+            } else {
+              n = node;
+            }
+          }
+        }
+    
+        return n;
+    }
+
+    get_lmost_sibling() {
+        if (!this._lmost_sibling && this.parent && this !== this.parent.childrens[0]) {
+            this._lmost_sibling = this.parent.childrens[0];
+        }
+
+    return this._lmost_sibling;
+    }
+
+    left(){
+        if (this.childrens.length > 0){
+            return this.childrens[0];
+        }else{
+            return this.thread;
+        }
+    }
+    right() {
+        if (this.childrens.length > 0){
+            return this.childrens[this.childrens.length-1];
+        }else{
+            return this.thread;
+        }
+    }
+
+}
+
+function buchheim(tree) {
+    var dt, min;
+    dt = firstwalk(tree);
+    min = second_walk(dt);
+
+    if (min < 0) {
+        third_walk(dt, -min);
+    }
+
+    return dt;
+}
+
+function firstwalk(v, distance = 50.0) {
+    var arr, default_ancestor, ell, midpoint, w;
+  
+    if (v.childrens.length === 0) {
+      if (v.get_lmost_sibling()) {
+        let tmp = v.left_brother();
+        if (tmp != null){
+            v.x = v.left_brother().x + distance;
+            if(v.x > v.root.width){
+                v.root.width = v.x;
+            }
+        }else{
+            v.x = 0.0;
+        }
+      } else {
+        v.x = 0.0;
+      }
+    } else {
+      default_ancestor = v.childrens[0];
+  
+      for (var w, _pj_c = 0, _pj_a = v.childrens, _pj_b = _pj_a.length; _pj_c < _pj_b; _pj_c += 1) {
+        w = _pj_a[_pj_c];
+        firstwalk(w);
+        default_ancestor = apportion(w, default_ancestor, distance);
+      }
+  
+      execute_shifts(v);
+      midpoint = (v.childrens[0].x + v.childrens.slice(-1)[0].x) / 2;
+      ell = v.childrens[0];
+      arr = v.childrens.slice(-1)[0];
+      w = v.left_brother();
+  
+      if (w) {
+        v.x = w.x + distance;
+        if(v.x > v.root.width){
+            v.root.width = v.x;
+        }
+        v.mod = v.x - midpoint;
+      } else {
+        v.x = midpoint;
+        if(v.x > v.root.width){
+            v.root.width = v.x;
+        }
+      }
+    }
+  
+    return v;
+}
+
+
+function apportion(v, default_ancestor, distance) {
+    var a, shift, sil, sir, sol, sor, vil, vir, vol, vor, w;
+    w = v.left_brother();
+  
+    if (w !== null) {
+      vir = vor = v;
+      vil = w;
+      vol = v.get_lmost_sibling();
+      sir = sor = v.mod;
+      sil = vil.mod;
+      sol = vol.mod;
+  
+      while (vil.right() && vir.left()) {
+        vil = vil.right();
+        vir = vir.left();
+        vol = vol.left();
+        vor = vor.right();
+        vor.ancestor = v;
+        shift = vil.x + sil - (vir.x + sir) + distance;
+        
+  
+        if (shift > 0) {
+          a = ancestor(vil, v, default_ancestor);
+          move_subtree(a, v, shift);
+          sir = sir + shift;
+          sor = sor + shift;
+        }
+  
+        sil += vil.mod;
+        sir += vir.mod;
+        sol += vol.mod;
+        sor += vor.mod;
+      }
+  
+      if (vil.right() && !vor.right()) {
+        vor.thread = vil.right();
+        vor.mod += sil - sor;
+      } else {
+        if (vir.left() && !vol.left()) {
+          vol.thread = vir.left();
+          vol.mod += sir - sol;
+        }
+  
+        default_ancestor = v;
+      }
+    }
+  
+    return default_ancestor;
+  }
+  
+  function move_subtree(wl, wr, shift) {
+    var subtrees;
+    subtrees = wr.number - wl.number;
+    wr.change -= shift / subtrees;
+    wr.shift += shift;
+    wl.change += shift / subtrees;
+    wr.x += shift;
+    if(wr.x > wr.root.width){
+        wr.root.width=wr.x;
+    }
+    wr.mod += shift;
+  }
+
+
+    function execute_shifts(v){
+        var shift, change;
+        shift = 0;
+        change = 0;
+        for (let w = v.childrens.length-1; w >= 0; w--){
+            v.childrens[w].x += shift;
+            if(v.childrens[w].x > v.childrens[w].root.width){
+                v.childrens[w].root.width=v.childrens[w].x;
+            }
+            v.childrens[w].mod += shift;
+            change += v.childrens[w].change
+            shift += v.childrens[w].shift + change;
+        }
+    }
+
+    function ancestor(vil, v, default_ancestor){
+        if (v.parent.childrens.includes(vil.ancestor)){
+            return vil.ancestor;
+        }else{
+            return default_ancestor;
+        }
+    }
+
+    function second_walk(v, m = 0, depth = 0, min = null) {
+        v.x += m;
+        if(v.x > v.root.width){
+            v.root.width = v.x;
+        }
+        v.y = depth;
+      
+        if (min === null || v.x < min) {
+          min = v.x;
+        }
+      
+        for (var w, _pj_c = 0, _pj_a = v.childrens, _pj_b = _pj_a.length; _pj_c < _pj_b; _pj_c += 1) {
+          w = _pj_a[_pj_c];
+          min = second_walk(w, m + v.mod, depth + 1, min);
+        }
+      
+        return min;
+    }
+      
+
+    function third_walk(tree, n) {
+        tree.x += n;
+        if(tree.x > tree.root.width){
+            tree.root.width = tree.x;
+        }
+      
+        for (var c, _pj_c = 0, _pj_a = tree.childrens, _pj_b = _pj_a.length; _pj_c < _pj_b; _pj_c += 1) {
+          c = _pj_a[_pj_c];
+          third_walk(c, n);
+        }
+      }
+      
+
+    
+    
+
+  </script>
+ </head>
+ <body onload="draw();">
+    <h1>
+        Graph A 
+        <input type="text" id="userTree0" placeholder="Only brackets" onkeyup="if (event.keyCode === 13){drawUsersTree('0');}">
+        <input type="button" value="Draw user's Tree A" onclick="drawUsersTree('0')">
+        <button onclick="reset(0)">Random Tree A</button>
+    </h1> 
+   <canvas id="canvas0" height="250"></canvas>
+   
+   <h1>
+        Graph B 
+        <input type="text" id="userTree1" placeholder="Only brackets" onkeyup="if (event.keyCode === 13){drawUsersTree('1');}">
+        <input type="button" value="Draw user's Tree B" onclick="drawUsersTree('1')">
+        <button onclick="reset(1)">Random Tree B</button>
+   
+    </h1>
+   <canvas id="canvas1" height="250"></canvas>
+   <button id="button1" onclick="solutions()">
+        Show Solutions
+    </button>
+   <div id="solutions" style="display: none">
+    <h1>A + B</h1>
+    <h3 id="bracketAddRep"></h3> 
+    <h3 id="numAddRep"></h3>
+    <canvas id="addition" height="250"></canvas>
+    <h1>A x B</h1> 
+    <h3 id="bracketMulRep"></h3> 
+    <h3 id="numMulRep"></h3>
+    <canvas id="multiplication" height="250"></canvas>
+    <h1>A ^ B</h1>
+    <h3 id="bracketCaretRep"></h3> 
+    <h3 id="numCaretRep"></h3> 
+    <canvas id="caret" height="250"></canvas>
+   </div>
+ </body>
+</html>
