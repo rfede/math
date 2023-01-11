@@ -209,6 +209,7 @@ function draw() {
 function invalidInput(canvas){
     const context = canvas.getContext("2d");
     context.clearRect(0, 0, canvas.width, canvas.height);
+    context.canvas.width = 500;
     context.fillStyle = "black";
     context.font = "bold 48px Arial";
     context.fillText("INVALID INPUT", (100), (canvas.height / 2));
@@ -359,7 +360,7 @@ function buchheim(tree) {
     return dt;
 }
 
-function firstwalk(v, distance = 50.0) {
+function firstwalk(v, distance = 25.0) {
     var arr, default_ancestor, ell, midpoint, w;
   
     if (v.childrens.length === 0) {
@@ -535,22 +536,31 @@ function apportion(v, default_ancestor, distance) {
   </script>
  </head>
  <body onload="draw();">
-    <h1>
-        Graph A 
-        <input type="text" id="userTree0" placeholder="Only brackets" onkeyup="if (event.keyCode === 13){drawUsersTree('0');}">
-        <input type="button" value="Draw user's Tree A" onclick="drawUsersTree('0')">
-        <button onclick="reset(0)">Random Tree A</button>
-    </h1> 
-   <canvas id="canvas0" height="250"></canvas>
+    <div style="display:flex;column-gap: 100px;">
+        <div style="flex-direction: column;">
+            <h1>
+                Graph A 
+                <input type="text" id="userTree0" placeholder="Only brackets" onkeyup="if (event.keyCode === 13){drawUsersTree('0');}">
+                <input type="button" value="Draw user's Tree A" onclick="drawUsersTree('0')">
+                <button onclick="reset(0)">Random Tree A</button>
+            </h1> 
+           <canvas id="canvas0" height="250"></canvas>
+        </div>
+        <div style="flex-direction: column;">
+            <h1>
+                Graph B 
+                <input type="text" id="userTree1" placeholder="Only brackets" onkeyup="if (event.keyCode === 13){drawUsersTree('1');}">
+                <input type="button" value="Draw user's Tree B" onclick="drawUsersTree('1')">
+                <button onclick="reset(1)">Random Tree B</button>
+           
+            </h1>
+           <canvas id="canvas1" height="250"></canvas>
+        </div>
+
+    </div>
+    
    
-   <h1>
-        Graph B 
-        <input type="text" id="userTree1" placeholder="Only brackets" onkeyup="if (event.keyCode === 13){drawUsersTree('1');}">
-        <input type="button" value="Draw user's Tree B" onclick="drawUsersTree('1')">
-        <button onclick="reset(1)">Random Tree B</button>
    
-    </h1>
-   <canvas id="canvas1" height="250"></canvas>
    <button id="button1" onclick="solutions()">
         Show Solutions
     </button>
